@@ -1,0 +1,58 @@
+# Wails / Go
+build/bin/
+frontend/dist/
+frontend/src/wailsjs/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+vendor/
+
+# Node / Vite
+node_modules/
+frontend/node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Project Specific
+*.enc
+config.json
+vault.enc
+dev/
+webview/
+EBWebView/
+mypassword.exe
+mypassword-dev.exe
+frontend/dist-zip/
+
+# Temporary
+/tmp/
+.cursor/ 
+.claude/
+.gemini/
+.antigravity/
+.agent/
+.codex/
+.kiro/
+.moonshot/
+.qwen/
+.kimi/
+.deepseek/
+
+# Documentation
+docs/
