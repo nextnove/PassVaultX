@@ -11,7 +11,8 @@ jobs:
       matrix:
         platform: [windows-latest] # 현재 윈도우 빌드만 집중
     runs-on: ${{ matrix.platform }}
-
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,7 +25,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22' # 프론트엔드 빌드용
+          node-version: '24' # github-actions/setup-node@v4는 Node.js 24 버전을 지원합니다.
 
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
