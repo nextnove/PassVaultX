@@ -49,6 +49,11 @@ jobs:
           if (Test-Path dist) { Remove-Item -Recurse -Force dist }
           New-Item -ItemType Directory -Force -Path dist
 
+          # 전체 경로에서 installer 파일 검색
+          Write-Host "--- 전체 프로젝트에서 .exe 파일 검색 ---"
+          Get-ChildItem -Recurse -Filter "*.exe" | Select-Object FullName, Length
+          Write-Host "----------------------------------------"
+
           Write-Host "--- build/bin/ 파일 목록 ---"
           Get-ChildItem "build/bin/" | Select-Object Name, Length
           Write-Host "---------------------------"
