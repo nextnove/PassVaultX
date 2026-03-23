@@ -4,7 +4,7 @@ on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch: # 수동 실행 버튼 추가
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -22,14 +22,13 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25.7' # 사용자 로컬 환경과 일치
+          go-version: '1.25.7'
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '24'
 
-      # NSIS가 없을 경우를 대비해 명시적으로 설치 (Chocolatey 활용)
       - name: Install NSIS
         run: choco install nsis -y
 
@@ -40,43 +39,42 @@ jobs:
         working-directory: ./frontend
         run: npm install
 
-      # 빌드 1: 일반 실행 파일 (Portable)
-      - name: Build Standard EXE
-        run: wails build -platform windows/amd64 -ldflags "-H windowsgui -s -w"
-
-      # 빌드 2: NSIS 인스톨러 (Installer)
-      - name: Build NSIS Installer
+      # -nsis 옵션 하나로 EXE + Installer 동시 생성
+      - name: Build Wails App
         run: wails build -platform windows/amd64 -nsis -ldflags "-H windowsgui -s -w"
 
-      # 파일 정리 및 이름 변경
       - name: Organize Artifacts
         shell: pwsh
         run: |
           if (Test-Path dist) { Remove-Item -Recurse -Force dist }
           New-Item -ItemType Directory -Force -Path dist
 
-          Write-Host "--- Checking build/bin directory ---"
+          Write-Host "--- build/bin/ 파일 목록 ---"
           Get-ChildItem "build/bin/" | Select-Object Name, Length
-          Write-Host "------------------------------------"
+          Write-Host "---------------------------"
 
-          # 인스톨러 복사 (installer 또는 setup 단어가 포함된 파일 검색)
+          # 인스톨러 복사
           $installer = Get-ChildItem "build/bin/*.exe" | Where-Object { $_.Name -match "installer" -or $_.Name -match "setup" } | Select-Object -First 1
           if ($installer) {
             Copy-Item $installer.FullName -Destination "dist/PassVaultX_Installer.exe"
-            Write-Host "Successfully copied Installer: $($installer.Name)"
+            Write-Host "Installer 복사 완료: $($installer.Name)"
           } else {
-            Write-Warning "Installer still not found! Check Wails build logs above."
+            Write-Error "Installer를 찾을 수 없습니다. 위 파일 목록을 확인하세요."
+            exit 1
           }
 
-          # 일반 EXE 복사 (위에서 찾은 인스톨러가 아닌 파일 중 용량이 있는 것)
+          # 일반 EXE 복사
           $exe = Get-ChildItem "build/bin/*.exe" | Where-Object { $_.Name -notmatch "installer" -and $_.Name -notmatch "setup" } | Select-Object -First 1
           if ($exe) {
             Copy-Item $exe.FullName -Destination "dist/PassVaultX.exe"
-            Write-Host "Successfully copied EXE: $($exe.Name)"
+            Write-Host "EXE 복사 완료: $($exe.Name)"
+          } else {
+            Write-Error "EXE를 찾을 수 없습니다."
+            exit 1
           }
 
-          Write-Host "Final dist folder contents:"
-          ls dist/
+          Write-Host "--- dist/ 최종 파일 목록 ---"
+          Get-ChildItem "dist/" | Select-Object Name, Length
 
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
