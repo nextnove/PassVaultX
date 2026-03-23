@@ -40,15 +40,30 @@ jobs:
       - name: Build Wails App (EXE & NSIS)
         run: wails build -platform windows/amd64 -nsis -ldflags "-H windowsgui -s -w"
 
-      # 2. 파일 정리 및 이름 변경 (경로 재확인)
       - name: Organize Artifacts
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist
-          # 일반 EXE 복사 (기본 경로는 build/bin/프로젝트명.exe 입니다)
-          Copy-Item "build/bin/*.exe" -Destination "dist/PassVaultX.exe" -Exclude "*-installer.exe"
-          # 설치형 EXE 복사 (패턴 매칭 강화)
-          Get-ChildItem "build/bin/*installer.exe" | Copy-Item -Destination "dist/PassVaultX_Installer.exe"
+
+          # installer 먼저 찾아서 복사
+          $installer = Get-ChildItem "build/bin/" -Filter "*-installer.exe" | Select-Object -First 1
+          if ($installer) {
+            Copy-Item $installer.FullName -Destination "dist/PassVaultX_Installer.exe"
+            Write-Host "Installer found: $($installer.Name)"
+          } else {
+            Write-Error "Installer not found!"
+            exit 1
+          }
+
+          # installer 제외한 나머지 exe 복사
+          $exe = Get-ChildItem "build/bin/" -Filter "*.exe" | Where-Object { $_.Name -notlike "*-installer.exe" } | Select-Object -First 1
+          if ($exe) {
+            Copy-Item $exe.FullName -Destination "dist/PassVaultX.exe"
+            Write-Host "EXE found: $($exe.Name)"
+          } else {
+            Write-Error "EXE not found!"
+            exit 1
+          }
 
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
@@ -57,7 +72,7 @@ jobs:
             dist/PassVaultX.exe
             dist/PassVaultX_Installer.exe
           name: Release ${{ github.ref_name }}
-          tag_name: ${{ github.ref }}
+          tag_name: ${{ github.ref_name }}  # ← refs/tags/v1.0.0 → v1.0.0
           draft: false
           prerelease: false
         env:
