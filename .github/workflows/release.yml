@@ -33,7 +33,28 @@ jobs:
         shell: pwsh
         run: |
           choco install nsis -y
-          echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          $nsisPath = "C:\Program Files (x86)\NSIS"
+          if (Test-Path "$nsisPath\makensis.exe") {
+            Write-Host "makensis found at $nsisPath"
+          } else {
+            $found = Get-ChildItem "C:\Program Files*" -Recurse -Filter "makensis.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($found) {
+              $nsisPath = $found.DirectoryName
+              Write-Host "makensis found at $nsisPath"
+            } else {
+              Write-Error "makensis.exe not found!"
+              exit 1
+            }
+          }
+          Add-Content $env:GITHUB_PATH $nsisPath
+          $env:PATH = "$nsisPath;$env:PATH"
+          Write-Host "PATH updated"
+
+      - name: Verify NSIS
+        shell: pwsh
+        run: |
+          makensis /VERSION
+          Write-Host "NSIS OK"
 
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
