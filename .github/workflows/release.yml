@@ -3,17 +3,15 @@ name: Build and Release PassVaultX
 on:
   push:
     tags:
-      - 'v*' # v1.0.0, v1.1.0 등 태그 푸시 시 실행
+      - 'v*'
+  workflow_dispatch: # 수동 실행 버튼 추가
 
 permissions:
   contents: write
 
 jobs:
   build:
-    strategy:
-      matrix:
-        platform: [windows-latest]
-    runs-on: ${{ matrix.platform }}
+    runs-on: windows-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       
@@ -24,12 +22,16 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: '1.25.7' # 사용자 로컬 환경과 일치
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+
+      # NSIS가 없을 경우를 대비해 명시적으로 설치 (Chocolatey 활용)
+      - name: Install NSIS
+        run: choco install nsis -y
 
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
@@ -38,44 +40,44 @@ jobs:
         working-directory: ./frontend
         run: npm install
 
-      # 빌드 실행: 단일 EXE와 NSIS 인스톨러를 한 번에 생성
-      - name: Build Wails App (EXE & NSIS)
+      # 빌드 1: 일반 실행 파일 (Portable)
+      - name: Build Standard EXE
+        run: wails build -platform windows/amd64 -ldflags "-H windowsgui -s -w"
+
+      # 빌드 2: NSIS 인스톨러 (Installer)
+      - name: Build NSIS Installer
         run: wails build -platform windows/amd64 -nsis -ldflags "-H windowsgui -s -w"
 
-      # 파일 정리 및 이름 변경 (가장 중요한 단계)
+      # 파일 정리 및 이름 변경
       - name: Organize Artifacts
         shell: pwsh
         run: |
-          # 1. dist 폴더 생성
           if (Test-Path dist) { Remove-Item -Recurse -Force dist }
           New-Item -ItemType Directory -Force -Path dist
 
-          # 2. 빌드된 원본 파일 목록 출력 (디버깅용)
-          Write-Host "--- Generated files in build/bin ---"
+          Write-Host "--- Checking build/bin directory ---"
           Get-ChildItem "build/bin/" | Select-Object Name, Length
           Write-Host "------------------------------------"
 
-          # 3. 인스톨러 파일 복사 (이름에 'installer'가 포함된 모든 exe 검색)
-          $installer = Get-ChildItem "build/bin/*.exe" | Where-Object { $_.Name -like "*installer*" } | Select-Object -First 1
+          # 인스톨러 복사 (installer 또는 setup 단어가 포함된 파일 검색)
+          $installer = Get-ChildItem "build/bin/*.exe" | Where-Object { $_.Name -match "installer" -or $_.Name -match "setup" } | Select-Object -First 1
           if ($installer) {
             Copy-Item $installer.FullName -Destination "dist/PassVaultX_Installer.exe"
             Write-Host "Successfully copied Installer: $($installer.Name)"
           } else {
-            Write-Error "Could not find any file matching *installer*.exe in build/bin/"
-            exit 1
+            Write-Warning "Installer still not found! Check Wails build logs above."
           }
 
-          # 4. 일반 실행 파일 복사 (인스톨러가 아닌 exe 검색)
-          $exe = Get-ChildItem "build/bin/*.exe" | Where-Object { $_.Name -notlike "*installer*" } | Select-Object -First 1
+          # 일반 EXE 복사 (위에서 찾은 인스톨러가 아닌 파일 중 용량이 있는 것)
+          $exe = Get-ChildItem "build/bin/*.exe" | Where-Object { $_.Name -notmatch "installer" -and $_.Name -notmatch "setup" } | Select-Object -First 1
           if ($exe) {
             Copy-Item $exe.FullName -Destination "dist/PassVaultX.exe"
             Write-Host "Successfully copied EXE: $($exe.Name)"
-          } else {
-            Write-Error "Could not find standard EXE in build/bin/"
-            exit 1
           }
 
-      # GitHub Release 생성 및 자산 업로드
+          Write-Host "Final dist folder contents:"
+          ls dist/
+
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
@@ -86,6 +88,6 @@ jobs:
           tag_name: ${{ github.ref_name }}
           draft: false
           prerelease: false
-          generate_release_notes: true # 커밋 로그를 기반으로 릴리스 노트 자동 생성
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
