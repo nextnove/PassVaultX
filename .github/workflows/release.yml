@@ -12,6 +12,8 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout code
@@ -21,30 +23,59 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.25.7'
-          cache: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: 'npm'
-          cache-dependency-path: './frontend/package-lock.json'
 
-      - name: Add NSIS to Path
-        run: echo "C:\Program Files (x86)\NSIS" >> $GITHUB_PATH
+      - name: Install NSIS
+        shell: pwsh
+        run: |
+          choco install nsis -y
+          $nsisPath = "C:\Program Files (x86)\NSIS"
+          if (-not (Test-Path "$nsisPath\makensis.exe")) {
+            $found = Get-ChildItem "C:\Program Files*" -Recurse -Filter "makensis.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($found) { $nsisPath = $found.DirectoryName }
+            else { Write-Error "makensis.exe not found!"; exit 1 }
+          }
+          Add-Content $env:GITHUB_PATH $nsisPath
 
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm install
+
       - name: Build Wails App
-        run: wails build -platform windows/amd64 -nsis
+        run: wails build -platform windows/amd64 -nsis -ldflags "-H windowsgui -s -w"
+
+      - name: Organize Artifacts
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+
+          $installer = Get-ChildItem "build/bin/*.exe" | Where-Object { $_.Name -match "installer" -or $_.Name -match "setup" } | Select-Object -First 1
+          if ($installer) {
+            Copy-Item $installer.FullName -Destination "dist/PassVaultX_Installer.exe"
+          } else {
+            Write-Error "Installer를 찾을 수 없습니다."; exit 1
+          }
+
+          $exe = Get-ChildItem "build/bin/*.exe" | Where-Object { $_.Name -notmatch "installer" -and $_.Name -notmatch "setup" } | Select-Object -First 1
+          if ($exe) {
+            Copy-Item $exe.FullName -Destination "dist/PassVaultX.exe"
+          } else {
+            Write-Error "EXE를 찾을 수 없습니다."; exit 1
+          }
 
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            build/bin/PassVaultX.exe
-            build/bin/*installer.exe
+            dist/PassVaultX.exe
+            dist/PassVaultX_Installer.exe
           name: Release ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
           draft: false
