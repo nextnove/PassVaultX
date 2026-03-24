@@ -12,7 +12,7 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,28 +21,24 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.25.7'
-          cache: true # Go 모듈 캐싱 활성화
+          cache: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: 'npm' # npm 패키지 캐싱 활성화
+          cache: 'npm'
           cache-dependency-path: './frontend/package-lock.json'
 
-      # NSIS 설치를 훨씬 간결하고 확실한 공식 Action으로 대체
-      - name: Setup NSIS
-        uses: johnwason/setup-nsis@v1
+      - name: Add NSIS to Path
+        run: echo "C:\Program Files (x86)\NSIS" >> $GITHUB_PATH
 
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
-      # wails.json에 "frontend:install" 및 "frontend:build"가 세팅되어 있다면
-      # 별도의 npm install 단계 없이 바로 빌드 명령을 내리는 것이 깔끔합니다.
       - name: Build Wails App
         run: wails build -platform windows/amd64 -nsis
-        
-      # 아티팩트 정리 스크립트를 없애고, Release Action에서 직접 파일을 업로드
+
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
