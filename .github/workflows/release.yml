@@ -12,9 +12,7 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-      
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,88 +21,34 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.25.7'
+          cache: true # Go 모듈 캐싱 활성화
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+          cache: 'npm' # npm 패키지 캐싱 활성화
+          cache-dependency-path: './frontend/package-lock.json'
 
-      - name: Install NSIS
-        shell: pwsh
-        run: |
-          choco install nsis -y
-          $nsisPath = "C:\Program Files (x86)\NSIS"
-          if (Test-Path "$nsisPath\makensis.exe") {
-            Write-Host "makensis found at $nsisPath"
-          } else {
-            $found = Get-ChildItem "C:\Program Files*" -Recurse -Filter "makensis.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
-            if ($found) {
-              $nsisPath = $found.DirectoryName
-              Write-Host "makensis found at $nsisPath"
-            } else {
-              Write-Error "makensis.exe not found!"
-              exit 1
-            }
-          }
-          Add-Content $env:GITHUB_PATH $nsisPath
-          $env:PATH = "$nsisPath;$env:PATH"
-          Write-Host "PATH updated"
-
-      - name: Verify NSIS
-        shell: pwsh
-        run: |
-          makensis /VERSION
-          Write-Host "NSIS OK"
+      # NSIS 설치를 훨씬 간결하고 확실한 공식 Action으로 대체
+      - name: Setup NSIS
+        uses: johnwason/setup-nsis@v1
 
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
-      - name: Install Frontend Dependencies
-        working-directory: ./frontend
-        run: npm install
-
+      # wails.json에 "frontend:install" 및 "frontend:build"가 세팅되어 있다면
+      # 별도의 npm install 단계 없이 바로 빌드 명령을 내리는 것이 깔끔합니다.
       - name: Build Wails App
-        run: wails build -platform windows/amd64 -nsis -ldflags "-H windowsgui -s -w"
-
-      - name: Organize Artifacts
-        shell: pwsh
-        run: |
-          if (Test-Path dist) { Remove-Item -Recurse -Force dist }
-          New-Item -ItemType Directory -Force -Path dist
-
-          Write-Host "--- build/bin/ 파일 목록 ---"
-          Get-ChildItem "build/bin/" | Select-Object Name, Length
-          Write-Host "---------------------------"
-
-          # 인스톨러 복사
-          $installer = Get-ChildItem "build/bin/*.exe" | Where-Object { $_.Name -match "installer" -or $_.Name -match "setup" } | Select-Object -First 1
-          if ($installer) {
-            Copy-Item $installer.FullName -Destination "dist/PassVaultX_Installer.exe"
-            Write-Host "Installer 복사 완료: $($installer.Name)"
-          } else {
-            Write-Error "Installer를 찾을 수 없습니다. 위 파일 목록을 확인하세요."
-            exit 1
-          }
-
-          # 일반 EXE 복사
-          $exe = Get-ChildItem "build/bin/*.exe" | Where-Object { $_.Name -notmatch "installer" -and $_.Name -notmatch "setup" } | Select-Object -First 1
-          if ($exe) {
-            Copy-Item $exe.FullName -Destination "dist/PassVaultX.exe"
-            Write-Host "EXE 복사 완료: $($exe.Name)"
-          } else {
-            Write-Error "EXE를 찾을 수 없습니다."
-            exit 1
-          }
-
-          Write-Host "--- dist/ 최종 파일 목록 ---"
-          Get-ChildItem "dist/" | Select-Object Name, Length
-
+        run: wails build -platform windows/amd64 -nsis
+        
+      # 아티팩트 정리 스크립트를 없애고, Release Action에서 직접 파일을 업로드
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/PassVaultX.exe
-            dist/PassVaultX_Installer.exe
+            build/bin/PassVaultX.exe
+            build/bin/*installer.exe
           name: Release ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
           draft: false
