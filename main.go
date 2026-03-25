@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"passvaultx/internal/config"
+	"passvaultx/internal/updater"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -56,8 +57,7 @@ func main() {
 		OnStartup: func(ctx context.Context) {
 			app.startup(ctx)
 			// 화면이 표시된 후 백그라운드에서 업데이트 확인 실행
-			// (빌드 태그에 따라 실제 동작하거나 빈 함수가 호출됨)
-			go CheckForUpdates()
+			updater.Check(ctx, config.AppVersion)
 		},
 		
 		OnBeforeClose: app.beforeClose,

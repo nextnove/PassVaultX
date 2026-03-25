@@ -42,6 +42,7 @@ export { SettingsPanel } from './SettingsPanel';
 
 // Export new components
 export { DeleteConfirmDialog } from './DeleteConfirmDialog';
+export { UpdateModal } from './UpdateModal';
 export { Toaster } from './ui/toaster';
 export { useToast } from './ui/use-toast';
 

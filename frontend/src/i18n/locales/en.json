@@ -11,6 +11,7 @@
     "confirm": "Confirm",
     "deleting": "Deleting...",
     "update": "Update",
+    "later": "Later",
     "initializing": "Initializing...",
     "appName": "PassVaultX"
   },
@@ -128,6 +129,7 @@
     "addCategory": "Add Category",
     "newCategoryPlaceholder": "Category name",
     "totalItems": "Total Items",
+    "updateAvailable": "Update Available",
     "categoryEmptyError": "Category name cannot be empty.",
     "categoryExistsError": "Category with this name already exists.",
     "categoryAddError": "Failed to add category."
@@ -225,7 +227,14 @@
     "updatedSuccess": "Category updated successfully",
     "addedSuccess": "Category added successfully",
     "deletedSuccess": "Category deleted successfully",
-    "deleteTitle": "Delete Category",
     "deleteConfirm": "Are you sure you want to delete this category? This action cannot be undone. If this category is in use by any password items, the deletion will fail."
+  },
+  "update": {
+    "title": "New Update Available!",
+    "message": "A new version {{version}} has been released. Would you like to update?",
+    "recommended": "Recommended (Auto Update)",
+    "useInstaller": "Update with Installer",
+    "portable": "Portable Version (Single EXE)",
+    "downloadPortable": "Download Single EXE"
   }
 }

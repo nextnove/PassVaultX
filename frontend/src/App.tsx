@@ -17,8 +17,10 @@ import { LoginPage } from './components/LoginPage'
 import { CreateVaultForm } from './components/CreateVaultForm'
 import { VaultPage } from './components/VaultPage'
 import { useVault } from './stores/vaultStore'
+import { useUpdateStore } from './stores/updateStore'
 import { useTheme } from './hooks'
 import React from 'react'
+import { UpdateModal } from './components/UpdateModal'
 
 // 에러 경계 컴포넌트 추가
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
@@ -82,6 +84,20 @@ function App(): React.JSX.Element {
       if (unsubscribe) unsubscribe();
     };
   }, [lockVault]);
+
+  const { setUpdateInfo } = useUpdateStore()
+  
+  // 업데이트 확인 이벤트 구독
+  useEffect(() => {
+    const unsubscribe = EventsOn("update-available", (data: any) => {
+      log('[App] New update available:', data);
+      setUpdateInfo(data.latestVersion, data.installerUrl, data.portableUrl);
+    });
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [setUpdateInfo]);
 
   // Window blur (deactivate) 시 자동 잠금 처리
   useEffect(() => {
@@ -188,6 +204,7 @@ function App(): React.JSX.Element {
           </>
         )}
       </Routes>
+      <UpdateModal />
     </BrowserRouter>
   )
 }

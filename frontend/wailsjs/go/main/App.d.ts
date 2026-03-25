@@ -49,6 +49,8 @@ export function ResetConfig():Promise<models.AppConfig>;
 
 export function SetLanguage(arg1:string):Promise<void>;
 
+export function StartUpdate(arg1:string):Promise<void>;
+
 export function SyncConfig(arg1:models.AppConfig):Promise<models.AppConfig>;
 
 export function TrackUsage(arg1:string):Promise<void>;

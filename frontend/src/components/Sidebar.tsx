@@ -11,6 +11,7 @@ const logError = (...args: any[]) => {
 };
 
 import { useCategories, useSearch, usePasswordItems } from '../stores/vaultStore';
+import { useUpdateStore } from '../stores/updateStore';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { 
@@ -33,7 +34,8 @@ import {
   Plane,
   GraduationCap,
   Film,
-  Smartphone
+  Smartphone,
+  Rocket
 } from 'lucide-react';
 
 export function Sidebar({ isCollapsed = false }: { isCollapsed?: boolean }) {
@@ -157,6 +159,8 @@ export function Sidebar({ isCollapsed = false }: { isCollapsed?: boolean }) {
         return <FolderOpen className="h-4 w-4" />;
     }
   };
+
+  const { latestVersion, toggleUpdateModal } = useUpdateStore();
 
   return (
     <div className="h-full flex flex-col">
@@ -283,6 +287,21 @@ export function Sidebar({ isCollapsed = false }: { isCollapsed?: boolean }) {
           </div>
         )}
       </div>
+
+      {/* Update Notification */}
+      {!isCollapsed && latestVersion && (
+        <div className="px-6 mb-2">
+          <Button 
+            variant="default"
+            size="sm"
+            onClick={() => toggleUpdateModal(true)}
+            className="w-full bg-linear-to-r from-primary to-accent hover:opacity-90 shadow-lg animate-pulse"
+          >
+            <Rocket className="h-4 w-4 mr-2" />
+            <span className="text-xs font-bold">{t('sidebar.updateAvailable', '업데이트 대기 중')}</span>
+          </Button>
+        </div>
+      )}
 
       {/* Stats Card */}
       {!isCollapsed && (

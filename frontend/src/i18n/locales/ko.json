@@ -11,6 +11,7 @@
     "confirm": "확인",
     "deleting": "삭제 중...",
     "update": "업데이트",
+    "later": "나중에",
     "initializing": "초기화 중...",
     "appName": "PassVaultX"
   },
@@ -128,6 +129,7 @@
     "addCategory": "카테고리 추가",
     "newCategoryPlaceholder": "카테고리 이름",
     "totalItems": "전체 항목 수",
+    "updateAvailable": "업데이트 대기 중",
     "categoryEmptyError": "카테고리 이름을 입력해주세요.",
     "categoryExistsError": "이미 존재하는 카테고리 이름입니다.",
     "categoryAddError": "카테고리 추가에 실패했습니다."
@@ -226,7 +228,14 @@
     "updatedSuccess": "카테고리가 성공적으로 수정되었습니다",
     "addedSuccess": "카테고리가 성공적으로 추가되었습니다",
     "deletedSuccess": "카테고리가 성공적으로 삭제되었습니다",
-    "deleteTitle": "카테고리 삭제",
     "deleteConfirm": "이 카테고리를 정말 삭제하시겠습니까? 이 작업은 취소할 수 없습니다. 이 카테고리를 사용하는 비밀번호 항목이 있으면 삭제에 실패합니다."
+  },
+  "update": {
+    "title": "새로운 업데이트 발견!",
+    "message": "새로운 버전 {{version}}이 릴리스되었습니다. 업데이트를 진행하시겠습니까?",
+    "recommended": "권장 (자동 업데이트)",
+    "useInstaller": "인스톨러로 업데이트",
+    "portable": "휴대용 버전 (단일 EXE)",
+    "downloadPortable": "단일 EXE 다운로드"
   }
 }

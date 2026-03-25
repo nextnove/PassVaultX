@@ -9,6 +9,7 @@ import (
 	"passvaultx/internal/i18n"
 	"passvaultx/internal/models"
 	"passvaultx/internal/services"
+	"passvaultx/internal/updater"
 	"passvaultx/internal/vault"
 	"os"
 	"path/filepath"
@@ -501,4 +502,8 @@ func (a *App) ExportToExcel() error {
 	}
 
 	return nil
+}
+
+func (a *App) StartUpdate(url string) error {
+	return updater.RunInstaller(url)
 }

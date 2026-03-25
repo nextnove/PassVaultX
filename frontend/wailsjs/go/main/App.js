@@ -94,6 +94,10 @@ export function SetLanguage(arg1) {
   return window['go']['main']['App']['SetLanguage'](arg1);
 }
 
+export function StartUpdate(arg1) {
+  return window['go']['main']['App']['StartUpdate'](arg1);
+}
+
 export function SyncConfig(arg1) {
   return window['go']['main']['App']['SyncConfig'](arg1);
 }

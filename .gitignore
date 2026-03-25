@@ -39,6 +39,8 @@ EBWebView/
 mypassword.exe
 mypassword-dev.exe
 frontend/dist-zip/
+*.bat
+docs/
 
 # Temporary
 /tmp/
@@ -53,6 +55,3 @@ frontend/dist-zip/
 .qwen/
 .kimi/
 .deepseek/
-
-# Documentation
-docs/
